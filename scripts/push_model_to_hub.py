@@ -22,6 +22,7 @@ def main() -> None:
     if not MODEL_DIR.exists():
         sys.exit(f"Erreur : modèle introuvable dans {MODEL_DIR}. Lancez d'abord train.py.")
 
+    # Le tokenizer doit être publié avec les poids pour reproduire l'inférence.
     print(f"Chargement du modèle local depuis {MODEL_DIR} ...")
     model = AutoModelForSequenceClassification.from_pretrained(str(MODEL_DIR))
     tokenizer = AutoTokenizer.from_pretrained(str(MODEL_DIR))

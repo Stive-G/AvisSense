@@ -20,6 +20,7 @@ def predict_sentiment(text: str) -> str:
         return "Veuillez saisir un avis à analyser."
 
     try:
+        # Gradio réutilise exactement la même couche d'inférence que l'API.
         prediction = get_analyzer().predict(cleaned_text)
     except OSError as error:
         return f"Modèle indisponible : {error}"

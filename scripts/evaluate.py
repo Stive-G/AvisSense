@@ -53,6 +53,7 @@ def predict_in_batches(texts, model, tokenizer, batch_size, device):
 
     for start in range(0, len(texts), batch_size):
         batch_texts = texts[start:start + batch_size]
+        # Le padding est fait au niveau du lot pour limiter le calcul inutile.
         inputs = tokenizer(
             batch_texts,
             return_tensors="pt",
@@ -84,6 +85,7 @@ def show_most_confident_errors(texts, labels, predictions, confidences, id2label
         print("\nAucune erreur sur cet échantillon.")
         return
 
+    # Les erreurs les plus confiantes sont les plus utiles pour l'analyse qualitative.
     sorted_errors = error_indices[np.argsort(-confidences[error_indices])]
 
     print(f"\nTop {n_errors} erreurs les plus confiantes ({len(error_indices)} erreurs au total) :")
@@ -112,6 +114,7 @@ def main():
     id2label = model.config.id2label
 
     print("Chargement du test set Allociné...")
+    # Le test set reste séparé du train pour garder une mesure finale honnête.
     test_data = load_dataset("allocine", split="test").shuffle(seed=SEED)
     test_data = test_data.select(range(min(args.max_test, len(test_data))))
     texts = test_data["review"]

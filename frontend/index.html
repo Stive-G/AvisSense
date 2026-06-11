@@ -1,65 +1,22 @@
-<!DOCTYPE html>
-<!--
-  index.html — Front minimal d'AvisSense (consigne du prof : « colle un avis
-  -> positif/négatif + confiance »).
-
-  ARCHITECTURE : ce front est un simple fichier statique SERVI PAR L'API
-  FastAPI elle-même (voir le app.mount(...) à la fin de api/main.py).
-  Avantage : une seule application à déployer sur le Space = une seule URL
-  où le correcteur voit toute la chaîne (front + API + modèle).
-
-  Ce front est volontairement minimal (« sans usine à gaz ») : il peut être
-  remplacé par le front complet développé séparément, qui consommera les
-  mêmes endpoints (le contrat d'API ne change pas).
--->
+<!doctype html>
 <html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AvisSense — Analyse de sentiment</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <main class="card">
-    <h1>🎬 AvisSense</h1>
-    <p class="subtitle">
-      Collez un avis de film en français : le modèle (DistilCamemBERT
-      fine-tuné sur Allociné) prédit s'il est
-      <strong>positif</strong> ou <strong>négatif</strong>, avec sa confiance.
-    </p>
-
-    <!-- La zone où l'utilisateur colle son avis -->
-    <textarea
-      id="review-input"
-      rows="5"
-      placeholder="Exemple : Ce film est une pure merveille, j'ai adoré du début à la fin !"
-    ></textarea>
-
-    <!-- Le bouton qui déclenche l'appel à POST /predict (voir script.js) -->
-    <button id="analyze-btn">Analyser</button>
-
-    <!-- Zone de résultat : cachée (classe .hidden) tant qu'aucune prédiction
-         n'a été faite ; remplie par script.js après la réponse de l'API -->
-    <div id="result" class="result hidden">
-      <div id="result-label" class="result-label"></div>
-      <!-- Barre de confiance : sa largeur = le score du modèle -->
-      <div class="confidence-bar-bg">
-        <div id="confidence-bar" class="confidence-bar"></div>
-      </div>
-      <div id="result-confidence" class="result-confidence"></div>
-    </div>
-
-    <!-- Zone d'erreur (texte vide, API injoignable, etc.) -->
-    <div id="error" class="error hidden"></div>
-
-    <footer>
-      DistilCamemBERT fine-tuné sur Allociné · Projet M106 — Intro ML/DL ·
-      <a href="/docs">API docs</a>
-    </footer>
-  </main>
-
-  <!-- Le JS est chargé en fin de body : le HTML ci-dessus existe déjà
-       quand le script s'exécute (pas besoin d'attendre un événement) -->
-  <script src="script.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AvisSense</title>
+    <meta
+      name="description"
+      content="Analyse de sentiment d'avis cinema en francais avec DistilCamemBERT."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script type="module" src="/src/main.jsx"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
 </html>

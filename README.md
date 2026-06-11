@@ -1,3 +1,13 @@
+---
+title: AvisSense
+emoji: "🎬"
+colorFrom: blue
+colorTo: red
+sdk: docker
+app_port: 7860
+pinned: false
+short_description: Analyse de sentiment d'avis cinema en francais.
+---
 # 🎬 AvisSense — Analyse de sentiment d'avis cinéma (français)
 
 > Projet de fin de module **M106 — Intro ML/DL** · Sujet : analyse de sentiment d'avis en français (secteur culture)
@@ -234,6 +244,22 @@ La chaîne complète est alors visible à l'URL publique du Space : `https://VOT
 - Endpoint **batch** (`POST /predict/batch`) pour analyser plusieurs avis en un appel.
 - Export **ONNX + quantization int8** : inférence 2-4× plus rapide sur CPU.
 - **Monitoring** : logger les prédictions à faible confiance pour ré-annotation (amélioration continue).
+
+## 12. Interface Gradio optionnelle
+
+En plus de l'API FastAPI et de son front statique, une interface Gradio est
+disponible :
+
+```bash
+python app.py
+```
+
+FastAPI, Gradio et le script de prediction utilisent tous `src/inference.py`.
+Le modele est charge depuis `model/sentiment_model/` en local, ou depuis le
+repo Hugging Face indique par la variable d'environnement `MODEL_ID`.
+
+Le rapport de fusion des branches est disponible dans
+`docs/merge_report.md`.
 
 ---
 

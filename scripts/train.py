@@ -68,7 +68,14 @@ SORTIE : le modèle entraîné est sauvegardé dans model/sentiment_model/
 # ─── IMPORTS ────────────────────────────────────────────────────────────────
 import argparse        # Lire les options passées en ligne de commande (--epochs, etc.)
 import json            # Sauvegarder les métriques dans un fichier .json lisible
+import os
 from pathlib import Path  # Manipuler les chemins de fichiers proprement (Windows/Linux)
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+HF_CACHE_DIR = PROJECT_ROOT / "hf_cache"
+os.environ.setdefault("HF_HOME", str(HF_CACHE_DIR))
+os.environ.setdefault("HUGGINGFACE_HUB_CACHE", str(HF_CACHE_DIR / "hub"))
+os.environ.setdefault("TRANSFORMERS_CACHE", str(HF_CACHE_DIR / "transformers"))
 
 import numpy as np     # Calculs sur tableaux (argmax sur les prédictions)
 import torch           # PyTorch : le moteur de calcul du deep learning
@@ -117,7 +124,6 @@ SEED = 42
 # Chemins ABSOLUS calculés à partir de l'emplacement de ce fichier :
 # __file__ = ce script -> .parent = scripts/ -> .parent = la racine du projet.
 # Avantage : le script marche quel que soit le dossier d'où on le lance.
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_DIR = PROJECT_ROOT / "model" / "sentiment_model"   # Modèle final
 CHECKPOINTS_DIR = PROJECT_ROOT / "checkpoints"            # Sauvegardes intermédiaires
 

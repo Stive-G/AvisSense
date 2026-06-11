@@ -29,11 +29,13 @@ class SentimentAnalyzer:
             return self
 
         model_path = Path(self.model_id)
+        # On vérifie le chemin local explicitement pour renvoyer une erreur claire.
         if model_path.is_absolute() and not model_path.exists():
             raise FileNotFoundError(
                 f"Modèle introuvable dans {model_path}. Lancez d'abord scripts/train.py."
             )
 
+        # Même interface pour un chemin local ou un repo Hugging Face via MODEL_ID.
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_id)
         self.model = AutoModelForSequenceClassification.from_pretrained(
             self.model_id
@@ -49,6 +51,7 @@ class SentimentAnalyzer:
         if not self.is_loaded:
             raise RuntimeError("Le modèle doit être chargé avant la prédiction.")
 
+        # La troncature garde le comportement aligné avec l'entraînement.
         inputs = self.tokenizer(
             text,
             return_tensors="pt",

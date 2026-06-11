@@ -12,6 +12,7 @@ def clean_text(text: str | None) -> str:
 
 
 def _normalize_label(label: str) -> str:
+    # Normalise les accents pour comparer proprement des labels venant de sources différentes.
     normalized = unicodedata.normalize("NFD", str(label))
     normalized = "".join(char for char in normalized if unicodedata.category(char) != "Mn")
     return normalized.lower()

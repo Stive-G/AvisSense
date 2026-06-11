@@ -1,3 +1,13 @@
+---
+title: AvisSense
+emoji: "🎬"
+colorFrom: blue
+colorTo: red
+sdk: docker
+app_port: 7860
+pinned: false
+short_description: Analyse de sentiment d'avis cinema en francais avec DistilCamemBERT.
+---
 # 🎬 AvisSense — Analyse de sentiment d'avis cinéma (français)
 
 > Projet de fin de module **M106 — Intro ML/DL** · Sujet : analyse de sentiment d'avis en français (secteur culture)

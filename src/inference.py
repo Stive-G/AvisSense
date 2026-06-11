@@ -1,4 +1,4 @@
-"""Shared model loading and inference for the API, Gradio and other clients."""
+"""Chargement et inférence partagés entre API, CLI et Gradio."""
 
 import os
 from pathlib import Path
@@ -12,7 +12,7 @@ MAX_LENGTH = 256
 
 
 class SentimentAnalyzer:
-    """Load the fine-tuned model once and expose a reusable prediction method."""
+    """Charge le modèle une fois et expose une méthode de prédiction réutilisable."""
 
     def __init__(self, model_id: str | None = None, device: str | None = None):
         self.model_id = model_id or os.getenv("MODEL_ID", DEFAULT_MODEL_ID)
@@ -31,7 +31,7 @@ class SentimentAnalyzer:
         model_path = Path(self.model_id)
         if model_path.is_absolute() and not model_path.exists():
             raise FileNotFoundError(
-                f"Modele introuvable dans {model_path}. Lancez d'abord scripts/train.py."
+                f"Modèle introuvable dans {model_path}. Lancez d'abord scripts/train.py."
             )
 
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_id)
@@ -47,7 +47,7 @@ class SentimentAnalyzer:
 
     def predict(self, text: str, include_debug: bool = False) -> dict:
         if not self.is_loaded:
-            raise RuntimeError("Le modele doit etre charge avant la prediction.")
+            raise RuntimeError("Le modèle doit être chargé avant la prédiction.")
 
         inputs = self.tokenizer(
             text,

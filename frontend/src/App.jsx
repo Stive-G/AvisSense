@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 
 const EXAMPLES = [
-  "Un film d'une elegance rare, chaque scene est precise et emouvante.",
-  "La mise en scene est confuse et les dialogues sonnent faux du debut a la fin.",
-  "J'etais sceptique, mais le rythme et les acteurs m'ont completement embarque."
+  "Un film d'une élégance rare, chaque scène est précise et émouvante.",
+  "La mise en scène est confuse et les dialogues sonnent faux du début à la fin.",
+  "J'étais sceptique, mais le rythme et les acteurs m'ont complètement embarqué."
 ];
 
 function getApiUrl(path) {
@@ -13,7 +13,11 @@ function getApiUrl(path) {
 }
 
 function clampConfidence(value) {
-  return Math.max(0, Math.min(100, Number((value * 100).toFixed(1))));
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) {
+    return 0;
+  }
+  return Math.max(0, Math.min(100, Number((numericValue * 100).toFixed(1))));
 }
 
 function normalizeLabelKey(value) {
@@ -33,6 +37,18 @@ function getProbability(probabilities, expectedLabel) {
   }
 
   return 0;
+}
+
+function formatPercent(value) {
+  return `${clampConfidence(value)} %`;
+}
+
+function formatDuration(value) {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) {
+    return "Non disponible";
+  }
+  return `${numericValue.toFixed(1)} ms`;
 }
 
 export default function App() {
@@ -59,8 +75,8 @@ export default function App() {
           loading: false,
           ready: Boolean(data.model_loaded),
           message: data.model_loaded
-            ? "Modele pret pour l'inference"
-            : "API joignable, modele encore en chargement"
+            ? "Le modèle est prêt à analyser votre avis."
+            : "Le service est joignable, le modèle termine son chargement."
         });
       } catch (fetchError) {
         if (!isMounted) {
@@ -69,7 +85,7 @@ export default function App() {
         setHealth({
           loading: false,
           ready: false,
-          message: "Impossible de joindre l'API"
+          message: "Le service est indisponible pour le moment."
         });
       }
     }
@@ -104,13 +120,13 @@ export default function App() {
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.detail || "Prediction impossible");
+        throw new Error(data.detail || "Analyse impossible");
       }
 
       setResult(data);
     } catch (requestError) {
       setResult(null);
-      setError(requestError.message || "Prediction impossible");
+      setError(requestError.message || "Analyse impossible");
     } finally {
       setLoading(false);
     }
@@ -126,23 +142,21 @@ export default function App() {
 
       <main className="layout">
         <section className="hero-panel">
-          <div className="eyebrow">AvisSense / Sentiment cinema francais</div>
+          <div className="eyebrow">AvisSense</div>
           <h1>
-            Une interface front qui vend le modele
-            <span> sans cacher l'incertitude.</span>
+            Analysez un avis de film
+            <span> en quelques secondes.</span>
           </h1>
           <p className="hero-copy">
-            Ce front React parle a une API FastAPI hebergee sur Hugging Face et
-            renvoie un verdict lisible, un niveau de confiance et un etat de service.
+            Écrivez ou collez un avis en français, lancez l'analyse, puis consultez
+            un résultat simple : plutôt positif ou plutôt négatif, avec un niveau de confiance.
           </p>
 
           <div className="status-strip">
             <div className={`status-pill ${health.ready ? "ready" : "pending"}`}>
-              {health.loading ? "Verification de l'API..." : health.message}
+              {health.loading ? "Vérification du service..." : health.message}
             </div>
-            <a href={getApiUrl("/docs")} target="_blank" rel="noreferrer">
-              Voir la doc API
-            </a>
+            <span>Choisissez un exemple ou saisissez votre propre avis.</span>
           </div>
 
           <div className="example-grid">
@@ -161,25 +175,20 @@ export default function App() {
 
         <section className="workbench">
           <form className="analysis-card" onSubmit={handleSubmit}>
-            <div className="card-topline">
-              <span>POST /predict</span>
-              <span>JSON</span>
-            </div>
-
-            <label htmlFor="review-input">Avis a analyser</label>
+            <label htmlFor="review-input">Votre avis</label>
             <textarea
               id="review-input"
               value={text}
               onChange={(event) => setText(event.target.value)}
-              placeholder="Ecris un avis de film en francais..."
+              placeholder="Écrivez ici votre avis de film en français..."
               rows={8}
             />
 
             <div className="analysis-actions">
               <button type="submit" className="primary-button" disabled={loading}>
-                {loading ? "Analyse en cours..." : "Lancer l'analyse"}
+                {loading ? "Analyse en cours..." : "Analyser l'avis"}
               </button>
-              <span>{text.trim().length} caracteres</span>
+              <span>{text.trim().length} caractères</span>
             </div>
           </form>
 
@@ -188,7 +197,7 @@ export default function App() {
               <span className="result-title">Verdict</span>
               {result ? (
                 <span className={`result-badge ${positive ? "positive" : "negative"}`}>
-                  {positive ? "Positif" : "Negatif"}
+                  {positive ? "Positif" : "Négatif"}
                 </span>
               ) : (
                 <span className="result-badge idle">En attente</span>
@@ -201,8 +210,8 @@ export default function App() {
               <>
                 <div className="meter-block">
                   <div className="meter-labels">
-                    <span>Confiance du modele</span>
-                    <strong>{confidence}%</strong>
+                    <span>Niveau de confiance</span>
+                    <strong>{formatPercent(result.confidence)}</strong>
                   </div>
                   <div className="meter-track">
                     <div
@@ -215,22 +224,22 @@ export default function App() {
                 <div className="probability-grid">
                   <article>
                     <span>Positif</span>
-                    <strong>{clampConfidence(getProbability(result.probabilities, "positif"))}%</strong>
+                    <strong>{formatPercent(getProbability(result.probabilities, "positif"))}</strong>
                   </article>
                   <article>
-                    <span>Negatif</span>
-                    <strong>{clampConfidence(getProbability(result.probabilities, "negatif"))}%</strong>
+                    <span>Négatif</span>
+                    <strong>{formatPercent(getProbability(result.probabilities, "negatif"))}</strong>
                   </article>
                   <article>
-                    <span>Temps de reponse</span>
-                    <strong>{result.processing_time_ms} ms</strong>
+                    <span>Temps de réponse</span>
+                    <strong>{formatDuration(result.processing_time_ms)}</strong>
                   </article>
                 </div>
               </>
             ) : (
               <p className="placeholder-copy">
-                Colle un avis, lance l'analyse, puis utilise la confiance pour juger si le
-                verdict est net ou ambigu.
+                Collez un avis, cliquez sur le bouton d'analyse, puis consultez le verdict
+                et le niveau de confiance affichés à droite.
               </p>
             )}
           </section>

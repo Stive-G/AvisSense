@@ -1,12 +1,15 @@
 # Deep Learning
-torch>=2.2
-transformers>=4.44
-datasets>=2.20
-accelerate>=0.30
-scikit-learn>=1.4
+torch>=2.2,<2.7
+transformers>=4.45,<4.46
+datasets>=2.20,<4
+accelerate>=0.30,<1.0
+scikit-learn>=1.4,<2.0
+huggingface_hub>=0.24,<1.0
+sentencepiece>=0.2,<0.3
+protobuf>=4.25,<6
 
 # API and interfaces
-fastapi>=0.111
-uvicorn[standard]>=0.30
-pydantic>=2.7
-gradio>=5.0
+fastapi>=0.111,<1.0
+uvicorn[standard]>=0.30,<1.0
+pydantic>=2.7,<3.0
+gradio>=5.0,<6.0

@@ -3,18 +3,14 @@
 import logging
 import time
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from src.inference import SentimentAnalyzer
 from src.utils import clean_text
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-FRONTEND_DIR = PROJECT_ROOT / "frontend"
 MAX_INPUT_CHARS = 5000
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -88,6 +84,18 @@ def api_info():
     }
 
 
+@app.get("/", tags=["info"])
+def api_root():
+    return {
+        "name": "AvisSense API",
+        "status": "online",
+        "docs": "/docs",
+        "health": "/health",
+        "predict": "/predict",
+        "frontend": "Deploy the React frontend separately on Vercel.",
+    }
+
+
 @app.get("/health", tags=["monitoring"])
 def health_check():
     return {
@@ -122,6 +130,3 @@ def predict_sentiment(review: ReviewInput):
         elapsed_ms,
     )
     return PredictionOutput(**result, processing_time_ms=elapsed_ms)
-
-
-app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")

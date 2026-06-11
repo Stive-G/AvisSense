@@ -7,6 +7,7 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 HF_CACHE_DIR = PROJECT_ROOT / "hf_cache"
+# Force les téléchargements HF à rester dans le projet pour éviter les soucis de cache global.
 os.environ.setdefault("HF_HOME", str(HF_CACHE_DIR))
 os.environ.setdefault("HUGGINGFACE_HUB_CACHE", str(HF_CACHE_DIR / "hub"))
 os.environ.setdefault("TRANSFORMERS_CACHE", str(HF_CACHE_DIR / "transformers"))
@@ -90,6 +91,7 @@ def prepare_datasets(dataset, tokenizer, max_train: int, max_val: int, max_test:
     print("ÉTAPE 2/5 — Sous-échantillonnage et tokenisation")
     print("=" * 70)
 
+    # Les splits sont mélangés avant sélection pour garder un échantillon représentatif.
     train_data = dataset["train"].shuffle(seed=SEED).select(range(max_train))
     val_data = dataset["validation"].shuffle(seed=SEED).select(range(max_val))
     test_data = dataset["test"].shuffle(seed=SEED).select(range(max_test))
@@ -98,6 +100,7 @@ def prepare_datasets(dataset, tokenizer, max_train: int, max_val: int, max_test:
     def tokenize_batch(batch):
         return tokenizer(batch["review"], truncation=True, max_length=MAX_LENGTH)
 
+    # On retire le texte brut après tokenisation pour alléger les datasets en mémoire.
     train_data = train_data.map(tokenize_batch, batched=True, remove_columns=["review"])
     val_data = val_data.map(tokenize_batch, batched=True, remove_columns=["review"])
     test_data = test_data.map(tokenize_batch, batched=True, remove_columns=["review"])
@@ -113,6 +116,7 @@ def prepare_datasets(dataset, tokenizer, max_train: int, max_val: int, max_test:
 def apply_training_strategy(model, freeze_backbone: bool) -> str:
     """Applique la stratégie de fine-tuning choisie."""
     if freeze_backbone:
+        # En mode head-only, seul le classifieur final reste entraînable.
         for param in model.base_model.parameters():
             param.requires_grad = False
         strategy = "head-only (backbone gelé)"
@@ -133,6 +137,7 @@ def apply_training_strategy(model, freeze_backbone: bool) -> str:
 def compute_metrics(eval_pred):
     """Calcule accuracy, precision, recall et F1."""
     logits, labels = eval_pred
+    # La classe prédite correspond au logit le plus élevé.
     predictions = np.argmax(logits, axis=-1)
     precision, recall, f1, _ = precision_recall_fscore_support(
         labels, predictions, average="binary"
@@ -182,6 +187,7 @@ def main():
     print("\n" + "=" * 70)
     print("ÉTAPE 3/5 — Chargement du modèle et stratégie d'entraînement")
     print("=" * 70)
+    # Le mapping id2label/label2id est embarqué dans le modèle sauvegardé.
     model = AutoModelForSequenceClassification.from_pretrained(
         MODEL_NAME,
         num_labels=2,
@@ -193,6 +199,7 @@ def main():
     print("\n" + "=" * 70)
     print("ÉTAPE 4/5 — Entraînement")
     print("=" * 70)
+    # Le meilleur checkpoint est retenu sur le F1 de validation.
     training_args = TrainingArguments(
         output_dir=str(CHECKPOINTS_DIR),
         num_train_epochs=args.epochs,
@@ -211,6 +218,7 @@ def main():
         seed=SEED,
     )
 
+    # Padding dynamique pour éviter de remplir tous les batchs à MAX_LENGTH.
     data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
     trainer = Trainer(
         model=model,
@@ -228,6 +236,7 @@ def main():
     print("\n" + "=" * 70)
     print("ÉTAPE 5/5 — Évaluation finale sur le set de test")
     print("=" * 70)
+    # Le test final est exécuté après rechargement automatique du meilleur checkpoint.
     test_output = trainer.predict(test_data)
     test_metrics = test_output.metrics
     test_predictions = np.argmax(test_output.predictions, axis=-1)

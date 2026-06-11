@@ -21,6 +21,7 @@ analyzer = SentimentAnalyzer()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Le modèle est chargé une seule fois au démarrage pour éviter les rechargements par requête.
     logger.info("Chargement du modèle : %s ...", analyzer.model_id)
     start_time = time.perf_counter()
     analyzer.load()
@@ -118,6 +119,7 @@ def predict_sentiment(review: ReviewInput):
     if not analyzer.is_loaded:
         raise HTTPException(status_code=503, detail="Le modèle est en cours de chargement.")
 
+    # Le temps de réponse est renvoyé au front pour l'affichage utilisateur.
     start_time = time.perf_counter()
     result = analyzer.predict(text)
     elapsed_ms = round((time.perf_counter() - start_time) * 1000, 1)

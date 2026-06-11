@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+# Permet d'exécuter le script directement depuis la racine du projet.
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.inference import SentimentAnalyzer
@@ -13,6 +14,7 @@ from src.utils import clean_text
 
 def print_prediction(text: str, prediction: dict, verbose: bool = False) -> None:
     if verbose:
+        # Les informations de debug aident à inspecter une prédiction ponctuelle.
         debug = prediction["debug"]
         tokens = debug["tokens"]
         excerpt = f"{tokens[:15]}{'...' if len(tokens) > 15 else ''}"
@@ -31,6 +33,7 @@ def predict_and_print(analyzer: SentimentAnalyzer, text: str, verbose: bool) -> 
 
 
 def interactive_mode(analyzer: SentimentAnalyzer) -> None:
+    # Le mode interactif évite de relancer le script à chaque essai.
     print("\nMode interactif - saisissez un avis puis Entrée ('q' pour quitter)\n")
     while True:
         try:

@@ -1,4 +1,4 @@
-"""FastAPI service for the AvisSense sentiment model."""
+"""Service FastAPI pour l'analyse de sentiment AvisSense."""
 
 import logging
 import time
@@ -21,21 +21,20 @@ analyzer = SentimentAnalyzer()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Load the model once at startup and release it at shutdown."""
-    logger.info("Chargement du modele : %s ...", analyzer.model_id)
+    logger.info("Chargement du modèle : %s ...", analyzer.model_id)
     start_time = time.perf_counter()
     analyzer.load()
-    logger.info("Modele charge en %.1f s - API prete.", time.perf_counter() - start_time)
+    logger.info("Modèle chargé en %.1f s - API prête.", time.perf_counter() - start_time)
     yield
     analyzer.unload()
-    logger.info("Ressources liberees, arret de l'API.")
+    logger.info("Ressources libérées, arrêt de l'API.")
 
 
 app = FastAPI(
-    title="AvisSense - Analyse de sentiment d'avis cinema en francais",
+    title="AvisSense - Analyse de sentiment d'avis cinéma en français",
     description=(
-        "DistilCamemBERT fine-tune sur le dataset Allocine. "
-        "Classification binaire positif/negatif avec score de confiance."
+        "DistilCamemBERT fine-tuné sur le dataset Allociné. "
+        "Classification binaire positif/négatif avec score de confiance."
     ),
     version="1.1.0",
     lifespan=lifespan,
@@ -50,22 +49,22 @@ app.add_middleware(
 
 
 class ReviewInput(BaseModel):
-    """Request body accepted by POST /predict."""
+    """Corps accepté par POST /predict."""
 
     text: str = Field(
         ...,
-        description="L'avis en francais a analyser",
+        description="Avis en français à analyser",
         examples=["Ce film est incroyable"],
     )
 
 
 class PredictionOutput(BaseModel):
-    """Prediction returned by POST /predict."""
+    """Réponse renvoyée par POST /predict."""
 
     label: str = Field(description='"positif" ou "negatif"')
-    confidence: float = Field(description="Probabilite de la classe predite")
-    probabilities: dict[str, float] = Field(description="Probabilite de chaque classe")
-    processing_time_ms: float = Field(description="Duree de l'inference en millisecondes")
+    confidence: float = Field(description="Probabilité de la classe prédite")
+    probabilities: dict[str, float] = Field(description="Probabilité de chaque classe")
+    processing_time_ms: float = Field(description="Durée de l'inférence en millisecondes")
 
 
 @app.get("/info", tags=["info"])
@@ -73,13 +72,13 @@ def api_info():
     return {
         "name": "AvisSense API",
         "version": "1.1.0",
-        "description": "Analyse de sentiment d'avis cinema en francais",
+        "description": "Analyse de sentiment d'avis cinéma en français",
         "endpoints": {
-            "GET /": "front minimal",
+            "GET /": "informations générales",
             "GET /info": "informations de l'API",
-            "GET /health": "etat de l'API et du modele",
-            "GET /docs": "documentation Swagger",
-            "POST /predict": 'body {"text": "..."} -> label + confiance',
+            "GET /health": "état du service et du modèle",
+            "GET /docs": "documentation interactive",
+            "POST /predict": 'analyse d\'un avis via {"text": "..."}',
         },
     }
 
@@ -92,7 +91,7 @@ def api_root():
         "docs": "/docs",
         "health": "/health",
         "predict": "/predict",
-        "frontend": "Deploy the React frontend separately on Vercel.",
+        "frontend": "Le frontend React est déployé séparément sur Vercel.",
     }
 
 
@@ -110,20 +109,20 @@ def health_check():
 def predict_sentiment(review: ReviewInput):
     text = clean_text(review.text)
     if not text:
-        raise HTTPException(status_code=400, detail="Le texte ne peut pas etre vide.")
+        raise HTTPException(status_code=400, detail="Le texte ne peut pas être vide.")
     if len(text) > MAX_INPUT_CHARS:
         raise HTTPException(
             status_code=400,
-            detail=f"Texte trop long ({len(text)} caracteres, max {MAX_INPUT_CHARS}).",
+            detail=f"Texte trop long ({len(text)} caractères, maximum {MAX_INPUT_CHARS}).",
         )
     if not analyzer.is_loaded:
-        raise HTTPException(status_code=503, detail="Modele en cours de chargement.")
+        raise HTTPException(status_code=503, detail="Le modèle est en cours de chargement.")
 
     start_time = time.perf_counter()
     result = analyzer.predict(text)
     elapsed_ms = round((time.perf_counter() - start_time) * 1000, 1)
     logger.info(
-        'Prediction : "%s..." -> %s (%.0f %%) en %.0f ms',
+        'Prédiction : "%s..." -> %s (%.0f %%) en %.0f ms',
         text[:40],
         result["label"],
         result["confidence"] * 100,

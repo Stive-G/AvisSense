@@ -1,4 +1,4 @@
-"""Predict sentiment from the command line with the shared inference service."""
+"""Prédiction de sentiment en ligne de commande."""
 
 import argparse
 import sys
@@ -15,9 +15,10 @@ def print_prediction(text: str, prediction: dict, verbose: bool = False) -> None
     if verbose:
         debug = prediction["debug"]
         tokens = debug["tokens"]
-        print(f"  Tokens ({len(tokens)}) : {tokens[:15]}{'...' if len(tokens) > 15 else ''}")
+        excerpt = f"{tokens[:15]}{'...' if len(tokens) > 15 else ''}"
+        print(f"  Tokens ({len(tokens)}) : {excerpt}")
         print(f"  Logits bruts : {debug['logits']}")
-        print(f"  Probabilites : {prediction['probabilities']}")
+        print(f"  Probabilités : {prediction['probabilities']}")
 
     print(f"\n  Avis      : {text[:100]}{'...' if len(text) > 100 else ''}")
     print(f"  Sentiment : {prediction['label'].upper()}")
@@ -30,7 +31,7 @@ def predict_and_print(analyzer: SentimentAnalyzer, text: str, verbose: bool) -> 
 
 
 def interactive_mode(analyzer: SentimentAnalyzer) -> None:
-    print("\nMode interactif - tapez un avis puis Entree ('q' pour quitter)\n")
+    print("\nMode interactif - saisissez un avis puis Entrée ('q' pour quitter)\n")
     while True:
         try:
             text = clean_text(input("Votre avis > "))
@@ -39,7 +40,7 @@ def interactive_mode(analyzer: SentimentAnalyzer) -> None:
         if text.lower() in {"q", "quit", "exit"}:
             break
         if not text:
-            print("  (texte vide, reessayez)")
+            print("  Texte vide, recommencez.")
             continue
         predict_and_print(analyzer, text, verbose=True)
         print()
@@ -47,19 +48,17 @@ def interactive_mode(analyzer: SentimentAnalyzer) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Analyse de sentiment d'un avis en francais"
-    )
+    parser = argparse.ArgumentParser(description="Analyse de sentiment d'un avis en français")
     parser.add_argument(
         "text",
         nargs="?",
         default=None,
-        help="Avis a analyser. Sans argument : mode interactif.",
+        help="Avis à analyser. Sans argument : mode interactif.",
     )
     parser.add_argument(
         "--verbose",
         action="store_true",
-        help="Affiche les tokens, logits et probabilites",
+        help="Affiche les tokens, logits et probabilités",
     )
     args = parser.parse_args()
 
@@ -67,7 +66,7 @@ def main() -> None:
         analyzer = SentimentAnalyzer().load()
     except OSError as error:
         sys.exit(
-            f"Erreur : modele introuvable ou inaccessible ({error}).\n"
+            f"Erreur : modèle introuvable ou inaccessible ({error}).\n"
             "Lancez d'abord : python scripts/train.py"
         )
 

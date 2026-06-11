@@ -1,4 +1,4 @@
-"""Optional Gradio interface backed by the same model as the FastAPI service."""
+"""Interface Gradio optionnelle basée sur le même modèle que l'API."""
 
 from functools import lru_cache
 
@@ -10,31 +10,31 @@ from src.utils import clean_text, get_interpretation
 
 @lru_cache(maxsize=1)
 def get_analyzer() -> SentimentAnalyzer:
-    """Load the model once when the first Gradio prediction is requested."""
+    """Charge le modèle une seule fois pour Gradio."""
     return SentimentAnalyzer().load()
 
 
 def predict_sentiment(text: str) -> str:
     cleaned_text = clean_text(text)
     if not cleaned_text:
-        return "Veuillez saisir un avis a analyser."
+        return "Veuillez saisir un avis à analyser."
 
     try:
         prediction = get_analyzer().predict(cleaned_text)
     except OSError as error:
-        return f"Modele indisponible : {error}"
+        return f"Modèle indisponible : {error}"
     return get_interpretation(prediction["label"], prediction["confidence"])
 
 
 demo = gr.Interface(
     fn=predict_sentiment,
-    inputs=gr.Textbox(lines=5, label="Avis en francais"),
-    outputs=gr.Textbox(label="Resultat"),
+    inputs=gr.Textbox(lines=5, label="Avis en français"),
+    outputs=gr.Textbox(label="Résultat"),
     title="AvisSense",
-    description="Analyse de sentiment avec DistilCamemBERT fine-tune sur Allocine.",
+    description="Analyse de sentiment avec DistilCamemBERT fine-tuné sur Allociné.",
     examples=[
-        ["Un film magnifique, porte par des acteurs excellents."],
-        ["Scenario previsible et mise en scene sans interet."],
+        ["Un film magnifique, porté par des acteurs excellents."],
+        ["Scénario prévisible et mise en scène sans intérêt."],
     ],
 )
 

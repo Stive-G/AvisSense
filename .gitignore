@@ -1,7 +1,20 @@
-.venv/
+# Python
 __pycache__/
 *.pyc
-.ipynb_checkpoints/
-model/saved_model/
-.env
+.venv/
+venv/
+
+# Modèle entraîné : trop lourd pour GitHub.
+# Il est poussé sur le Hugging Face Hub à la place (voir README, section Déploiement).
+model/sentiment_model/
+checkpoints/
+
+# Caches Hugging Face
+.cache/
+hf_cache/
+
+# IDE / OS
+.vscode/
+.idea/
+Thumbs.db
 .DS_Store

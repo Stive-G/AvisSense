@@ -16,6 +16,25 @@ function clampConfidence(value) {
   return Math.max(0, Math.min(100, Number((value * 100).toFixed(1))));
 }
 
+function normalizeLabelKey(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function getProbability(probabilities, expectedLabel) {
+  const normalizedExpectedLabel = normalizeLabelKey(expectedLabel);
+
+  for (const [label, probability] of Object.entries(probabilities || {})) {
+    if (normalizeLabelKey(label) === normalizedExpectedLabel) {
+      return probability;
+    }
+  }
+
+  return 0;
+}
+
 export default function App() {
   const [text, setText] = useState(EXAMPLES[0]);
   const [result, setResult] = useState(null);
@@ -97,7 +116,7 @@ export default function App() {
     }
   }
 
-  const positive = result?.label === "positif";
+  const positive = normalizeLabelKey(result?.label) === "positif";
   const confidence = result ? clampConfidence(result.confidence) : 0;
 
   return (
@@ -196,11 +215,11 @@ export default function App() {
                 <div className="probability-grid">
                   <article>
                     <span>Positif</span>
-                    <strong>{clampConfidence(result.probabilities.positif)}%</strong>
+                    <strong>{clampConfidence(getProbability(result.probabilities, "positif"))}%</strong>
                   </article>
                   <article>
                     <span>Negatif</span>
-                    <strong>{clampConfidence(result.probabilities.negatif)}%</strong>
+                    <strong>{clampConfidence(getProbability(result.probabilities, "negatif"))}%</strong>
                   </article>
                   <article>
                     <span>Temps de reponse</span>

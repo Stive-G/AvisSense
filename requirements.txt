@@ -1,11 +1,12 @@
-# --- Deep Learning ---
-torch>=2.2                  # Backend de calcul (CPU ou GPU)
-transformers>=4.44          # Modèles pré-entraînés Hugging Face (DistilCamemBERT)
-datasets>=2.20              # Chargement du dataset Allociné
-accelerate>=0.30            # Requis par le Trainer de Hugging Face
-scikit-learn>=1.4           # Métriques : accuracy, precision, recall, f1
+# Deep Learning
+torch>=2.2
+transformers>=4.44
+datasets>=2.20
+accelerate>=0.30
+scikit-learn>=1.4
 
-# --- API & serveur ---
-fastapi>=0.111              # Framework de l'API REST
-uvicorn[standard]>=0.30     # Serveur ASGI pour lancer FastAPI
-pydantic>=2.7               # Validation des entrées JSON
+# API and interfaces
+fastapi>=0.111
+uvicorn[standard]>=0.30
+pydantic>=2.7
+gradio>=5.0

@@ -1,23 +1,53 @@
 import { useEffect, useState } from "react";
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
+const MAX_CHARACTERS = 5000;
 
 const EXAMPLES = [
-  "Un film d'une élégance rare, chaque scène est précise et émouvante.",
-  "La mise en scène est confuse et les dialogues sonnent faux du début à la fin.",
-  "J'étais sceptique, mais le rythme et les acteurs m'ont complètement embarqué."
+  {
+    tone: "positif",
+    label: "Une belle surprise",
+    text: "Un film d'une élégance rare, chaque scène est précise et émouvante."
+  },
+  {
+    tone: "negatif",
+    label: "Une vraie déception",
+    text: "La mise en scène est confuse et les dialogues sonnent faux du début à la fin."
+  },
+  {
+    tone: "positif",
+    label: "Un avis nuancé",
+    text: "J'étais sceptique, mais le rythme et les acteurs m'ont complètement embarqué."
+  }
 ];
+
+function Icon({ name }) {
+  const paths = {
+    arrow: <path d="M5 12h14m-5-5 5 5-5 5" />,
+    check: <path d="m5 12 4 4L19 6" />,
+    film: (
+      <>
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <path d="M7 5v14M17 5v14M3 9h4m10 0h4M3 15h4m10 0h4" />
+      </>
+    ),
+    spark: <path d="m12 3 1.4 4.2L18 9l-4.6 1.8L12 15l-1.4-4.2L6 9l4.6-1.8L12 3Zm6 11 .7 2.3L21 17l-2.3.7L18 20l-.7-2.3L15 17l2.3-.7L18 14Z" />,
+    trash: (
+      <>
+        <path d="M4 7h16m-10 4v5m4-5v5M9 7l1-3h4l1 3m3 0-1 13H7L6 7" />
+      </>
+    )
+  };
+
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      {paths[name]}
+    </svg>
+  );
+}
 
 function getApiUrl(path) {
   return API_BASE_URL ? `${API_BASE_URL}${path}` : path;
-}
-
-function clampConfidence(value) {
-  const numericValue = Number(value);
-  if (!Number.isFinite(numericValue)) {
-    return 0;
-  }
-  return Math.max(0, Math.min(100, Number((numericValue * 100).toFixed(1))));
 }
 
 function normalizeLabelKey(value) {
@@ -27,16 +57,19 @@ function normalizeLabelKey(value) {
     .toLowerCase();
 }
 
+function clampConfidence(value) {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue)
+    ? Math.max(0, Math.min(100, Number((numericValue * 100).toFixed(1))))
+    : 0;
+}
+
 function getProbability(probabilities, expectedLabel) {
   const normalizedExpectedLabel = normalizeLabelKey(expectedLabel);
-
-  for (const [label, probability] of Object.entries(probabilities || {})) {
-    if (normalizeLabelKey(label) === normalizedExpectedLabel) {
-      return probability;
-    }
-  }
-
-  return 0;
+  const entry = Object.entries(probabilities || {}).find(
+    ([label]) => normalizeLabelKey(label) === normalizedExpectedLabel
+  );
+  return entry ? entry[1] : 0;
 }
 
 function formatPercent(value) {
@@ -45,18 +78,15 @@ function formatPercent(value) {
 
 function formatDuration(value) {
   const numericValue = Number(value);
-  if (!Number.isFinite(numericValue)) {
-    return "Non disponible";
-  }
-  return `${numericValue.toFixed(1)} ms`;
+  return Number.isFinite(numericValue) ? `${numericValue.toFixed(1)} ms` : "—";
 }
 
 export default function App() {
-  const [text, setText] = useState(EXAMPLES[0]);
+  const [text, setText] = useState(EXAMPLES[0].text);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [health, setHealth] = useState({ loading: true, ready: false, message: "" });
+  const [health, setHealth] = useState({ loading: true, ready: false });
 
   useEffect(() => {
     let isMounted = true;
@@ -64,29 +94,11 @@ export default function App() {
     async function fetchHealth() {
       try {
         const response = await fetch(getApiUrl("/health"));
-        if (!response.ok) {
-          throw new Error("API indisponible");
-        }
+        if (!response.ok) throw new Error("API indisponible");
         const data = await response.json();
-        if (!isMounted) {
-          return;
-        }
-        setHealth({
-          loading: false,
-          ready: Boolean(data.model_loaded),
-          message: data.model_loaded
-            ? "Le modèle est prêt à analyser votre avis."
-            : "Le service est joignable, le modèle termine son chargement."
-        });
-      } catch (fetchError) {
-        if (!isMounted) {
-          return;
-        }
-        setHealth({
-          loading: false,
-          ready: false,
-          message: "Le service est indisponible pour le moment."
-        });
+        if (isMounted) setHealth({ loading: false, ready: Boolean(data.model_loaded) });
+      } catch {
+        if (isMounted) setHealth({ loading: false, ready: false });
       }
     }
 
@@ -101,7 +113,7 @@ export default function App() {
     const trimmed = text.trim();
 
     if (!trimmed) {
-      setError("Saisis un avis avant de lancer l'analyse.");
+      setError("Saisissez un avis avant de lancer l'analyse.");
       setResult(null);
       return;
     }
@@ -112,17 +124,11 @@ export default function App() {
     try {
       const response = await fetch(getApiUrl("/predict"), {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: trimmed })
       });
-
       const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.detail || "Analyse impossible");
-      }
-
+      if (!response.ok) throw new Error(data.detail || "Analyse impossible");
       setResult(data);
     } catch (requestError) {
       setResult(null);
@@ -132,119 +138,190 @@ export default function App() {
     }
   }
 
+  function chooseExample(example) {
+    setText(example.text);
+    setError("");
+  }
+
   const positive = normalizeLabelKey(result?.label) === "positif";
   const confidence = result ? clampConfidence(result.confidence) : 0;
+  const characterCount = text.length;
 
   return (
-    <div className="page-shell">
-      <div className="ambient ambient-left" />
-      <div className="ambient ambient-right" />
+    <div className="app-shell">
+      <header className="topbar">
+        <a className="brand" href="/" aria-label="AvisSense, accueil">
+          <span className="brand-mark"><Icon name="film" /></span>
+          <span>AvisSense</span>
+        </a>
+        <div className={`service-status ${health.ready ? "online" : ""}`}>
+          <span className="status-dot" />
+          {health.loading ? "Connexion au modèle" : health.ready ? "Modèle opérationnel" : "Service indisponible"}
+        </div>
+      </header>
 
-      <main className="layout">
-        <section className="hero-panel">
-          <div className="eyebrow">AvisSense</div>
-          <h1>
-            Analysez un avis de film
-            <span> en quelques secondes.</span>
-          </h1>
-          <p className="hero-copy">
-            Écrivez ou collez un avis en français, lancez l'analyse, puis consultez
-            un résultat simple : plutôt positif ou plutôt négatif, avec un niveau de confiance.
-          </p>
-
-          <div className="status-strip">
-            <div className={`status-pill ${health.ready ? "ready" : "pending"}`}>
-              {health.loading ? "Vérification du service..." : health.message}
+      <main>
+        <section className="hero">
+          <div className="hero-content">
+            <div className="eyebrow"><Icon name="spark" /> Analyse de sentiment en français</div>
+            <h1>Comprenez ce que vos avis <em>veulent vraiment dire.</em></h1>
+            <p>
+              AvisSense détecte instantanément le sentiment d'un avis cinéma et vous
+              livre un verdict clair, accompagné de son niveau de confiance.
+            </p>
+            <div className="hero-points">
+              <span><Icon name="check" /> Résultat instantané</span>
+              <span><Icon name="check" /> Analyse en français</span>
+              <span><Icon name="check" /> Score de confiance</span>
             </div>
-            <span>Choisissez un exemple ou saisissez votre propre avis.</span>
           </div>
-
-          <div className="example-grid">
-            {EXAMPLES.map((example) => (
-              <button
-                key={example}
-                type="button"
-                className="example-card"
-                onClick={() => setText(example)}
-              >
-                {example}
-              </button>
-            ))}
+          <div className="hero-visual" aria-hidden="true">
+            <div className="quote-card quote-card-back">
+              <span>« Une réalisation remarquable. »</span>
+            </div>
+            <div className="quote-card quote-card-front">
+              <div className="quote-topline"><span>Verdict détecté</span><strong>Positif</strong></div>
+              <div className="quote-mark">“</div>
+              <p>Un film sensible, porté par des acteurs exceptionnels.</p>
+              <div className="confidence-preview">
+                <span><i /> Confiance</span>
+                <strong>96,8 %</strong>
+              </div>
+            </div>
           </div>
         </section>
 
-        <section className="workbench">
-          <form className="analysis-card" onSubmit={handleSubmit}>
-            <label htmlFor="review-input">Votre avis</label>
-            <textarea
-              id="review-input"
-              value={text}
-              onChange={(event) => setText(event.target.value)}
-              placeholder="Écrivez ici votre avis de film en français..."
-              rows={8}
-            />
-
-            <div className="analysis-actions">
-              <button type="submit" className="primary-button" disabled={loading}>
-                {loading ? "Analyse en cours..." : "Analyser l'avis"}
-              </button>
-              <span>{text.trim().length} caractères</span>
+        <section className="workspace">
+          <div className="workspace-heading">
+            <div>
+              <span className="section-index">01 / Analyse</span>
+              <h2>Testez un avis</h2>
             </div>
-          </form>
+            <p>Collez votre texte ou partez d'un exemple.</p>
+          </div>
 
-          <section className="result-card">
-            <div className="result-header">
-              <span className="result-title">Verdict</span>
-              {result ? (
-                <span className={`result-badge ${positive ? "positive" : "negative"}`}>
-                  {positive ? "Positif" : "Négatif"}
+          <div className="workspace-grid">
+            <form className="editor-card" onSubmit={handleSubmit}>
+              <div className="card-heading">
+                <div>
+                  <span className="card-kicker">Votre texte</span>
+                  <h3>Que pensez-vous du film ?</h3>
+                </div>
+                <button
+                  className="icon-button"
+                  type="button"
+                  onClick={() => {
+                    setText("");
+                    setResult(null);
+                    setError("");
+                  }}
+                  aria-label="Effacer le texte"
+                  title="Effacer"
+                >
+                  <Icon name="trash" />
+                </button>
+              </div>
+
+              <textarea
+                id="review-input"
+                value={text}
+                maxLength={MAX_CHARACTERS}
+                onChange={(event) => setText(event.target.value)}
+                placeholder="Écrivez ou collez un avis de film en français..."
+                rows={8}
+              />
+
+              <div className="editor-footer">
+                <span className={characterCount > MAX_CHARACTERS * 0.9 ? "count warning" : "count"}>
+                  {characterCount.toLocaleString("fr-FR")} / {MAX_CHARACTERS.toLocaleString("fr-FR")}
                 </span>
+                <button type="submit" className="primary-button" disabled={loading}>
+                  {loading ? <span className="spinner" /> : <Icon name="spark" />}
+                  {loading ? "Analyse en cours" : "Analyser cet avis"}
+                  {!loading && <Icon name="arrow" />}
+                </button>
+              </div>
+            </form>
+
+            <section className={`result-card ${result ? (positive ? "is-positive" : "is-negative") : ""}`}>
+              <div className="card-heading">
+                <div>
+                  <span className="card-kicker">Résultat</span>
+                  <h3>Verdict de l'analyse</h3>
+                </div>
+                <span className={`verdict-pill ${result ? (positive ? "positive" : "negative") : "idle"}`}>
+                  <span />
+                  {result ? (positive ? "Positif" : "Négatif") : "En attente"}
+                </span>
+              </div>
+
+              {error ? (
+                <div className="error-box">{error}</div>
+              ) : result ? (
+                <div className="result-content">
+                  <div className="score">
+                    <span className="score-label">Confiance du modèle</span>
+                    <strong>{confidence.toLocaleString("fr-FR")}<small>%</small></strong>
+                    <div className="meter-track">
+                      <div className="meter-fill" style={{ width: `${confidence}%` }} />
+                    </div>
+                  </div>
+                  <div className="metric-grid">
+                    <article>
+                      <span>Positif</span>
+                      <strong>{formatPercent(getProbability(result.probabilities, "positif"))}</strong>
+                    </article>
+                    <article>
+                      <span>Négatif</span>
+                      <strong>{formatPercent(getProbability(result.probabilities, "negatif"))}</strong>
+                    </article>
+                    <article>
+                      <span>Temps d'analyse</span>
+                      <strong>{formatDuration(result.processing_time_ms)}</strong>
+                    </article>
+                  </div>
+                </div>
               ) : (
-                <span className="result-badge idle">En attente</span>
+                <div className="empty-result">
+                  <div className="empty-icon"><Icon name="spark" /></div>
+                  <h4>Votre résultat apparaîtra ici</h4>
+                  <p>Lancez une analyse pour connaître le sentiment et le score de confiance.</p>
+                </div>
               )}
+            </section>
+          </div>
+
+          <div className="examples-section">
+            <span className="examples-label">Besoin d'inspiration ?</span>
+            <div className="example-grid">
+              {EXAMPLES.map((example, index) => (
+                <button
+                  key={example.text}
+                  type="button"
+                  className={`example-card ${text === example.text ? "active" : ""}`}
+                  onClick={() => chooseExample(example)}
+                >
+                  <span className={`example-number ${example.tone}`}>0{index + 1}</span>
+                  <span>
+                    <strong>{example.label}</strong>
+                    <small>{example.text}</small>
+                  </span>
+                  <Icon name="arrow" />
+                </button>
+              ))}
             </div>
-
-            {error ? <p className="error-box">{error}</p> : null}
-
-            {result ? (
-              <>
-                <div className="meter-block">
-                  <div className="meter-labels">
-                    <span>Niveau de confiance</span>
-                    <strong>{formatPercent(result.confidence)}</strong>
-                  </div>
-                  <div className="meter-track">
-                    <div
-                      className={`meter-fill ${positive ? "positive" : "negative"}`}
-                      style={{ width: `${confidence}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="probability-grid">
-                  <article>
-                    <span>Positif</span>
-                    <strong>{formatPercent(getProbability(result.probabilities, "positif"))}</strong>
-                  </article>
-                  <article>
-                    <span>Négatif</span>
-                    <strong>{formatPercent(getProbability(result.probabilities, "negatif"))}</strong>
-                  </article>
-                  <article>
-                    <span>Temps de réponse</span>
-                    <strong>{formatDuration(result.processing_time_ms)}</strong>
-                  </article>
-                </div>
-              </>
-            ) : (
-              <p className="placeholder-copy">
-                Collez un avis, cliquez sur le bouton d'analyse, puis consultez le verdict
-                et le niveau de confiance affichés à droite.
-              </p>
-            )}
-          </section>
+          </div>
         </section>
       </main>
+
+      <footer>
+        <a className="brand" href="/" aria-label="AvisSense, accueil">
+          <span className="brand-mark"><Icon name="film" /></span>
+          <span>AvisSense</span>
+        </a>
+        <p>Analyse de sentiment cinéma propulsée par DistilCamemBERT.</p>
+        <span>Projet IA · 2026</span>
+      </footer>
     </div>
   );
 }

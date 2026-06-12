@@ -269,8 +269,16 @@ def main():
     with open(metrics_path, "w", encoding="utf-8") as file:
         json.dump(metrics_summary, file, indent=2, ensure_ascii=False)
 
+    # Historique complet de l'entraînement (loss par pas, métriques de
+    # validation par époque) : utilisé par scripts/generate_metrics_plots.py
+    # et notebooks/metrics_report.ipynb pour tracer les courbes.
+    history_path = OUTPUT_DIR / "training_history.json"
+    with open(history_path, "w", encoding="utf-8") as file:
+        json.dump(trainer.state.log_history, file, indent=2, ensure_ascii=False)
+
     print(f"\nModèle sauvegardé dans   : {OUTPUT_DIR}")
     print(f"Métriques sauvegardées   : {metrics_path}")
+    print(f"Historique sauvegardé    : {history_path}")
     print('\nÉtape suivante : tester avec  python scripts/predict.py "Votre avis ici"')
 
 

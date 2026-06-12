@@ -1,9 +1,11 @@
 """Génère et sauvegarde les graphiques de métriques du modèle (PNG).
 
 Produit les figures classiques d'un rapport de projet ML, prêtes à insérer
-dans les slides ou la vidéo :
+dans les slides ou la vidéo. Elles sont écrites dans notebooks/, à côté du
+notebook metrics_report.ipynb :
 
-    reports/figures/
+    notebooks/
+    ├── metrics_report.ipynb
     ├── 1_loss_curves.png            Courbes de perte train/validation (diagnostic surapprentissage)
     ├── 2_metrics_par_epoque.png     Accuracy et F1 de validation par époque
     ├── 3_confusion_matrix_abs.png   Matrice de confusion (valeurs absolues)
@@ -37,7 +39,8 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 MODEL_DIR = PROJECT_ROOT / "model" / "sentiment_model"
-FIGURES_DIR = PROJECT_ROOT / "reports" / "figures"
+# Les figures sont écrites à côté du notebook, dans notebooks/
+FIGURES_DIR = PROJECT_ROOT / "notebooks"
 BASE_MODEL = "cmarkea/distilcamembert-base"  # Pour la baseline « brute » (non fine-tunée)
 CLASS_NAMES = ["négatif", "positif"]
 MAX_LENGTH = 256
